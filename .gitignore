@@ -1,0 +1,8 @@
+_cmake
+.vscode
+**/CMakeFiles
+**/_TRASH
+
+Thumbs.db
+.DS_Store
+*.log
