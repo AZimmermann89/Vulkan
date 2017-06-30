@@ -1,10 +1,7 @@
 project(vulktest C CXX)
 cmake_minimum_required(VERSION 3.8) 
-add_subdirectory(lib)
+add_subdirectory(core)
 add_executable(vulktest main.cpp)
-target_link_libraries(vulktest vulk_engine)
+target_link_libraries(vulktest vulk_core)
 
-set_property(
-    GLOBAL PROPERTY VS_STARTUP_PROJECT vulktest
-    GLOBAL PROPERTY USE_FOLDERS ON
-)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT vulktest)
