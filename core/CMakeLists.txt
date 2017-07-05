@@ -5,7 +5,7 @@ find_package(Vulkan REQUIRED)
 
 set(VULKAN_GLSL_COMPILER "${Vulkan_INCLUDE_DIRS}/../Bin/glslangValidator.exe")
 
-set(CORE core.h core.cpp)
+set(CORE RenderCore.h RenderCore.cpp)
 
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
