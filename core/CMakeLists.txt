@@ -5,12 +5,25 @@ find_package(Vulkan REQUIRED)
 
 set(VULKAN_GLSL_COMPILER "${Vulkan_INCLUDE_DIRS}/../Bin/glslangValidator.exe")
 
-set(CORE RenderCore.h RenderCore.cpp)
+set(CORE 
+    RenderCore.h
+    RenderCore.cpp
+ )
+
+
+ set(SHADER
+    shaders/shader.frag
+    shaders/shader.vert
+    shaders/compile.bat
+ )
+
+ source_group(core FILES ${CORE})
+ source_group(shaders FILES ${SHADER})
 
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
 
-add_library(${LIBNAME} STATIC ${CORE} ${Vulkan_INCLUDE_DIRS})
+add_library(${LIBNAME} STATIC ${CORE} ${Vulkan_INCLUDE_DIRS} ${SHADER})
 
 set_target_properties(${LIBNAME} PROPERTIES LINKER_LANGUAGE CXX)
 

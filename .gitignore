@@ -6,3 +6,4 @@ _cmake
 Thumbs.db
 .DS_Store
 *.log
+*.spv
