@@ -16,9 +16,14 @@ set(CORE
     shaders/compile.bat    
  )
 
- include_directories(
-     thirdparty/stb
+ set(ADDITIONAL_INCLUDES
+    thirdparty/stb
  )
+
+ target_include_directories("${LIBNAME}"
+ PUBLIC
+     ${CMAKE_CURRENT_SOURCE_DIR}  ${ADDITIONAL_INCLUDES}
+)
 
 source_group(core FILES ${CORE})
 source_group(shaders FILES ${SHADER})
