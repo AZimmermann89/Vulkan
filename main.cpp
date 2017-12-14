@@ -1,10 +1,10 @@
 // Alexander Zimmermann, 2017
-#include <RenderCore.h>
+#include <code/RenderCore.h>
 #include <iostream>
 
 int main() {
-    RenderCore rendCore{};
-
+    EngineCore::RenderCore rendCore{};
+    
     try {
         rendCore.Run();
     }
