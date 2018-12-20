@@ -167,6 +167,7 @@ namespace EngineCore {
         VkImage m_textureImage;
         VkDeviceMemory m_textureImageMemory;
 
+		VkImageView m_textureImageView;
 
         void InitWindow();
         void InitVulkan();
@@ -197,6 +198,7 @@ namespace EngineCore {
         void CreateDescriptorPool();
         void CreateDescriptorSet();
         void CreateTextureImage();
+        void CreateTextureImageView();
 
         void UpdateUniformBuffer();
         void DrawFrame();
@@ -221,6 +223,7 @@ namespace EngineCore {
         void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
         void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		VkImageView CreateImageView(VkImage image, VkFormat format);
 };
 }
 
