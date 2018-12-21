@@ -139,54 +139,54 @@ namespace EngineCore {
         void Run();
 
     private:
-        GLFWwindow* m_pWindow;
+        GLFWwindow* pWindow;
 
-        VkInstance m_instance;
-		VkDebugUtilsMessengerEXT m_callback;
-        VkSurfaceKHR m_surface;
+        VkInstance instance;
+		VkDebugUtilsMessengerEXT callback;
+        VkSurfaceKHR surface;
 
-        VkPhysicalDevice m_physicalDevice;
-        VkDevice m_device;
+        VkPhysicalDevice physicalDevice;
+        VkDevice device;
 
-        VkQueue m_graphicsQueue;
-        VkQueue m_presentQueue;
+        VkQueue graphicsQueue;
+        VkQueue presentQueue;
 
-        VkSwapchainKHR m_swapChain;
-        std::vector<VkImage> m_swapChainImages;
-        VkFormat m_swapChainImageFormat;
-        VkExtent2D m_swapChainExtent;
-        std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<VkFramebuffer> m_swapChainFramebuffers;
+        VkSwapchainKHR swapChain;
+        std::vector<VkImage> swapChainImages;
+        VkFormat swapChainImageFormat;
+        VkExtent2D swapChainExtent;
+        std::vector<VkImageView> swapChainImageViews;
+        std::vector<VkFramebuffer> swapChainFramebuffers;
 
-        VkRenderPass m_renderPass;
-        VkDescriptorSetLayout m_descriptorSetLayout;
-        VkDescriptorPool m_descriptorPool;
-		std::vector<VkDescriptorSet> m_descriptorSets;
-        VkPipelineLayout m_pipelineLayout;
-        VkPipeline m_graphicsPipeline;
+        VkRenderPass renderPass;
+        VkDescriptorSetLayout descriptorSetLayout;
+        VkDescriptorPool descriptorPool;
+		std::vector<VkDescriptorSet> descriptorSets;
+        VkPipelineLayout pipelineLayout;
+        VkPipeline graphicsPipeline;
 
-		VkCommandPool m_commandPool;
-        std::vector<VkCommandBuffer> m_commandBuffers;
+		VkCommandPool commandPool;
+        std::vector<VkCommandBuffer> commandBuffers;
 
-		std::vector<VkSemaphore> m_imageAvailableSemaphores;
-		std::vector<VkSemaphore> m_renderFinishedSemaphores;
-		std::vector<VkFence> m_inFlightFences;
-		size_t m_currentFrame = 0;
+		std::vector<VkSemaphore> imageAvailableSemaphores;
+		std::vector<VkSemaphore> renderFinishedSemaphores;
+		std::vector<VkFence> inFlightFences;
+		size_t currentFrame = 0;
 
-		bool m_framebufferResized = false;
+		bool bFramebufferResized = false;
 
-        VkBuffer m_vertexBuffer;
-        VkDeviceMemory m_vertexBufferMemory;
-        VkBuffer m_indexBuffer;
-        VkDeviceMemory m_indexBufferMemory;
-		std::vector<VkBuffer> m_uniformBuffers;
-		std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+        VkBuffer vertexBuffer;
+        VkDeviceMemory vertexBufferMemory;
+        VkBuffer indexBuffer;
+        VkDeviceMemory indexBufferMemory;
+		std::vector<VkBuffer> uniformBuffers;
+		std::vector<VkDeviceMemory> uniformBuffersMemory;
 
-        VkImage m_textureImage;
-        VkDeviceMemory m_textureImageMemory;
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
 
-		VkImageView m_textureImageView;
-		VkSampler m_textureSampler;
+		VkImageView textureImageView;
+		VkSampler textureSampler;
 
         void InitWindow();
         void InitVulkan();
