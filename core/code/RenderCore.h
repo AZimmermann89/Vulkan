@@ -10,13 +10,14 @@
 
 #include <vector>
 #include <array>
-
+#include <optional>
 
 namespace EngineCore {
 
     const int WIDTH = 800;
     const int HEIGHT = 600;
-    const bool FULLSCREEN = true;
+
+	const int MAX_FRAMES_IN_FLIGHT = 2;
 
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_LUNARG_standard_validation"
@@ -32,30 +33,31 @@ namespace EngineCore {
     const bool enableValidationLayers = true;
 #endif
 
-    inline VkResult CreateDebugReportCallbackEXT(VkInstance instance, const VkDebugReportCallbackCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugReportCallbackEXT* pCallback) {
-        auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
-        if (func != nullptr) {
-            return func(instance, pCreateInfo, pAllocator, pCallback);
-        }
-        else {
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-    }
+	inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback) 
+	{
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			return func(instance, pCreateInfo, pAllocator, pCallback);
+		}
+		else {
+			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
 
-    inline void DestroyDebugReportCallbackEXT(VkInstance instance, VkDebugReportCallbackEXT callback, const VkAllocationCallbacks* pAllocator) {
-        auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-        if (func != nullptr) {
-            func(instance, callback, pAllocator);
-        }
-    }
+	inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
+	{
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			func(instance, callback, pAllocator);
+		}
+	}
 
     struct QueueFamilyIndices {
-        int graphicsFamily = -1;
-        int presentFamily = -1;
-        int transferFamily = -1;
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
         bool IsComplete() {
-            return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0;
+			return graphicsFamily.has_value() && presentFamily.has_value();
         }
     };
 
@@ -68,6 +70,7 @@ namespace EngineCore {
     struct Vertex {
         glm::vec2 pos;
         glm::vec3 color;
+		glm::vec2 texCoord;
 
         static VkVertexInputBindingDescription GetBindingDescription()
         {
@@ -80,8 +83,8 @@ namespace EngineCore {
             return bindingDescription;
         }
 
-        static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
-            std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
+            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
@@ -93,15 +96,20 @@ namespace EngineCore {
             attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
             attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+			attributeDescriptions[2].binding = 0;
+			attributeDescriptions[2].location = 2;
+			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
             return attributeDescriptions;
         }
     };
 
     const std::vector<Vertex> vertices = {
-        { { -0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f } },
-        { { 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f } },
-        { { 0.5f, 0.5f },{ 0.0f, 0.0f, 1.0f } },
-        { { -0.5f, 0.5f },{ 1.0f, 1.0f, 1.0f } }
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
     };
 
     const std::vector<uint16_t> indices = {
@@ -126,7 +134,7 @@ namespace EngineCore {
         GLFWwindow* m_pWindow;
 
         VkInstance m_instance;
-        VkDebugReportCallbackEXT m_callback;
+		VkDebugUtilsMessengerEXT m_callback;
         VkSurfaceKHR m_surface;
 
         VkPhysicalDevice m_physicalDevice;
@@ -134,7 +142,6 @@ namespace EngineCore {
 
         VkQueue m_graphicsQueue;
         VkQueue m_presentQueue;
-        VkQueue m_transferQueue;
 
         VkSwapchainKHR m_swapChain;
         std::vector<VkImage> m_swapChainImages;
@@ -146,28 +153,32 @@ namespace EngineCore {
         VkRenderPass m_renderPass;
         VkDescriptorSetLayout m_descriptorSetLayout;
         VkDescriptorPool m_descriptorPool;
-        VkDescriptorSet m_descriptorSet;
+		std::vector<VkDescriptorSet> m_descriptorSets;
         VkPipelineLayout m_pipelineLayout;
         VkPipeline m_graphicsPipeline;
 
-        VkCommandPool m_graphicsCommandPool;
-        VkCommandPool m_transferCommandPool;
+		VkCommandPool m_commandPool;
         std::vector<VkCommandBuffer> m_commandBuffers;
 
-        VkSemaphore m_imageAvailableSemaphore;
-        VkSemaphore m_renderFinishedSemaphore;
+		std::vector<VkSemaphore> m_imageAvailableSemaphores;
+		std::vector<VkSemaphore> m_renderFinishedSemaphores;
+		std::vector<VkFence> m_inFlightFences;
+		size_t m_currentFrame = 0;
+
+		bool m_framebufferResized = false;
 
         VkBuffer m_vertexBuffer;
         VkDeviceMemory m_vertexBufferMemory;
         VkBuffer m_indexBuffer;
         VkDeviceMemory m_indexBufferMemory;
-        VkBuffer m_uniformBuffer;
-        VkDeviceMemory m_uniformBufferMemory;
+		std::vector<VkBuffer> m_uniformBuffers;
+		std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 
         VkImage m_textureImage;
         VkDeviceMemory m_textureImageMemory;
 
 		VkImageView m_textureImageView;
+		VkSampler m_textureSampler;
 
         void InitWindow();
         void InitVulkan();
@@ -191,16 +202,17 @@ namespace EngineCore {
         void CreateFramebuffers();
         void CreateCommandPool();
         void CreateCommandBuffers();
-        void CreateSemaphores();
+        void CreateSyncObjects();
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffer();
         void CreateDescriptorPool();
-        void CreateDescriptorSet();
+        void CreateDescriptorSets();
         void CreateTextureImage();
         void CreateTextureImageView();
+		void CreateTextureSampler();
 
-        void UpdateUniformBuffer();
+        void UpdateUniformBuffer(uint32_t currentImage);
         void DrawFrame();
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -215,8 +227,8 @@ namespace EngineCore {
         std::vector<const char*> GetRequiredExtensions();
         bool CheckValidationLayerSupport();
         static std::vector<char> ReadFile(const std::string& filename);
-        static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location, int32_t code, const char* layerPrefix, const char* msg, void* userData);
-        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkCommandBuffer BeginSingleTimeCommands();
@@ -224,6 +236,7 @@ namespace EngineCore {
         void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 		VkImageView CreateImageView(VkImage image, VkFormat format);
+
 };
 }
 
