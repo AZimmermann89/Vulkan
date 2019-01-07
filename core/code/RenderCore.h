@@ -7,8 +7,10 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <vector>
 #include <array>
@@ -18,6 +20,10 @@ namespace EngineCore {
 
 	const int WIDTH = 800;
 	const int HEIGHT = 600;
+
+	const std::string MODEL_PATH = "/assets/models/chalet.obj";
+	const std::string TEXTURE_PATH = "/assets/textures/chalet.jpg";
+	//const std::string TEXTURE_PATH = "/assets/textures/texture.jpg";
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -106,24 +112,12 @@ namespace EngineCore {
 
 			return attributeDescriptions;
 		}
-	};
 
-	const std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		bool operator==(const Vertex& other) const {
+			return pos == other.pos && color == other.color && texCoord == other.texCoord;
+		}
 	};
-
-	const std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
+	
 
 	struct UniformBufferObject 
 	{
@@ -178,6 +172,8 @@ namespace EngineCore {
 
 		bool bFramebufferResized = false;
 
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
 		VkBuffer vertexBuffer;
 		VkDeviceMemory vertexBufferMemory;
 		VkBuffer indexBuffer;
@@ -228,6 +224,7 @@ namespace EngineCore {
 		void CreateDepthResources();
 
 		void UpdateUniformBuffer(uint32_t currentImage);
+		void LoadModel();
 		void DrawFrame();
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -257,11 +254,22 @@ namespace EngineCore {
 	};
 }
 
+template<> struct std::hash<EngineCore::Vertex> {
+	size_t operator()(EngineCore::Vertex const& vertex) const {
+		return ((std::hash<glm::vec3>()(vertex.pos) ^
+			(std::hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
+			(std::hash<glm::vec2>()(vertex.texCoord) << 1);
+	}
+};
+
+
 /*
 
 
 TODO:
 
+Make functions const so they are reusable.
+____________________________________________________________________________________
 Unify
 void CreateVertexBuffer();
 void CreateIndexBuffer();
@@ -290,6 +298,5 @@ This is known as aliasing and some Vulkan functions have explicit flags to speci
 ______________________________________________________________________________________________________________________________
 
 Replace the Image Loader by an own image loader
-
 
 */

@@ -25,6 +25,7 @@ source_group(shaders FILES ${SHADER})
 
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
+add_subdirectory(thirdparty/tinyobjloader)
 
 add_library(${LIBNAME} STATIC ${CORE} ${Vulkan_INCLUDE_DIRS} ${SHADER})
 
@@ -48,4 +49,4 @@ target_include_directories("${LIBNAME}"
         ${Vulkan_INCLUDE_DIRS}
 )
 
-target_link_libraries(${LIBNAME} glfw glm ${Vulkan_LIBRARIES})
+target_link_libraries(${LIBNAME} glfw glm tinyobjloader ${Vulkan_LIBRARIES})
