@@ -40,7 +40,7 @@ void RenderCore::InitVulkan() {
 	CreateInstance();
 	SetupDebugCallback();
 	CreateSurface();
-	PickPhysicalDevice();
+	PickPhysicalDevice(physicalDevice, msaaSamples);
 	CreateLogicalDevice();
 	CreateSwapChain();
 	CreateImageViews();
@@ -228,7 +228,7 @@ void RenderCore::CreateSurface() {
 	}
 }
 
-void RenderCore::PickPhysicalDevice() {
+void RenderCore::PickPhysicalDevice(VkPhysicalDevice & physicalDevice, VkSampleCountFlagBits & msaaSamples) const {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
@@ -242,7 +242,7 @@ void RenderCore::PickPhysicalDevice() {
 	for (const auto& device : devices) {
 		if (IsDeviceSuitable(device)) {
 			physicalDevice = device;
-			msaaSamples = GetMaxUsableSampleCount();
+			msaaSamples = GetMaxUsableSampleCount(physicalDevice);
 			break;
 		}
 	}
@@ -458,7 +458,11 @@ void RenderCore::CreateDescriptorSetLayout()
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { 
+		uboLayoutBinding, 
+		samplerLayoutBinding 
+	};
+
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1518,7 +1522,7 @@ VkExtent2D RenderCore::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabil
 	}
 }
 
-SwapChainSupportDetails RenderCore::QuerySwapChainSupport(VkPhysicalDevice device)
+SwapChainSupportDetails RenderCore::QuerySwapChainSupport(const VkPhysicalDevice & device) const
 {
 	SwapChainSupportDetails details;
 
@@ -1545,7 +1549,7 @@ SwapChainSupportDetails RenderCore::QuerySwapChainSupport(VkPhysicalDevice devic
 	return details;
 }
 
-bool RenderCore::IsDeviceSuitable(VkPhysicalDevice device)
+bool RenderCore::IsDeviceSuitable(const VkPhysicalDevice &  device) const
 {
 	QueueFamilyIndices indices = FindQueueFamilies(device);
 
@@ -1563,7 +1567,7 @@ bool RenderCore::IsDeviceSuitable(VkPhysicalDevice device)
 	return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
-bool RenderCore::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+bool RenderCore::CheckDeviceExtensionSupport(const VkPhysicalDevice & device) const
 {
 	uint32_t extensionCount;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -1581,7 +1585,7 @@ bool RenderCore::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	return requiredExtensions.empty();
 }
 
-QueueFamilyIndices RenderCore::FindQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices RenderCore::FindQueueFamilies(const VkPhysicalDevice & device) const
 {
 	QueueFamilyIndices indices;
 
@@ -1744,7 +1748,7 @@ inline bool RenderCore::HasStencilComponent(VkFormat format)
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-VkSampleCountFlagBits RenderCore::GetMaxUsableSampleCount()
+VkSampleCountFlagBits RenderCore::GetMaxUsableSampleCount(VkPhysicalDevice & physicalDevice) const
 {
 	VkPhysicalDeviceProperties physicalDeviceProperties;
 	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);

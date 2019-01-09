@@ -206,7 +206,7 @@ namespace EngineCore {
 		void CreateInstance();
 		void SetupDebugCallback();
 		void CreateSurface();
-		void PickPhysicalDevice();
+		void PickPhysicalDevice(VkPhysicalDevice & physicalDevice, VkSampleCountFlagBits & msaaSamples) const;
 		void CreateLogicalDevice();
 		void CreateSwapChain();
 		void CreateImageViews();
@@ -237,10 +237,10 @@ namespace EngineCore {
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
-		bool IsDeviceSuitable(VkPhysicalDevice device);
-		bool CheckDeviceExtensionSupport(VkPhysicalDevice device);
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+		SwapChainSupportDetails QuerySwapChainSupport(const VkPhysicalDevice & device) const;
+		bool IsDeviceSuitable(const VkPhysicalDevice & device) const;
+		bool CheckDeviceExtensionSupport(const VkPhysicalDevice & device) const;
+		QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice & device) const;
 		std::vector<const char*> GetRequiredExtensions();
 		bool CheckValidationLayerSupport();
 		static std::vector<char> ReadFile(const std::string& filename);
@@ -264,7 +264,7 @@ namespace EngineCore {
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 		VkFormat FindDepthFormat();
 		inline bool HasStencilComponent(VkFormat format);
-		VkSampleCountFlagBits GetMaxUsableSampleCount();
+		VkSampleCountFlagBits GetMaxUsableSampleCount(VkPhysicalDevice & physicalDevice) const;
 	};
 }
 
