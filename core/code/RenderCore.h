@@ -217,8 +217,6 @@ namespace EngineCore {
 		void CreateCommandPool();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
-		void CreateVertexBuffer();
-		void CreateIndexBuffer();
 		void CreateUniformBuffers();
 		void CreateDescriptorPool();
 		void CreateDescriptorSets();
@@ -231,7 +229,7 @@ namespace EngineCore {
 		void UpdateUniformBuffer(uint32_t currentImage);
 		void LoadModel();
 		void DrawFrame();
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -245,8 +243,8 @@ namespace EngineCore {
 		bool CheckValidationLayerSupport();
 		static std::vector<char> ReadFile(const std::string& filename);
 		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+		void AllocateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 		void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels,
 			VkSampleCountFlagBits numSamples,
 			VkFormat format,
@@ -255,8 +253,8 @@ namespace EngineCore {
 			VkMemoryPropertyFlags properties,
 			VkImage& image,
 			VkDeviceMemory& imageMemory);
-		VkCommandBuffer BeginSingleTimeCommands();
-		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
@@ -265,6 +263,36 @@ namespace EngineCore {
 		VkFormat FindDepthFormat();
 		inline bool HasStencilComponent(VkFormat format);
 		VkSampleCountFlagBits GetMaxUsableSampleCount(VkPhysicalDevice & physicalDevice) const;
+
+		template <typename elementType>
+		void CreateBuffer(std::vector<elementType> & elements, VkBuffer & buffer, VkDeviceMemory & bufferMemory, VkBufferUsageFlagBits flag) const
+		{
+			VkDeviceSize bufferSize{ sizeof(elements[0]) * elements.size() };
+
+			VkBuffer stagingBuffer;
+			VkDeviceMemory stagingBufferMemory;
+			AllocateBuffer(bufferSize,
+				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				stagingBuffer,
+				stagingBufferMemory);
+
+			void* data;
+			vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+			memcpy(data, elements.data(), (size_t)bufferSize);
+			vkUnmapMemory(device, stagingBufferMemory);
+
+			AllocateBuffer(bufferSize,
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT | flag,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				buffer,
+				bufferMemory);
+
+			CopyBuffer(stagingBuffer, buffer, bufferSize);
+
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		}
 	};
 }
 
@@ -281,14 +309,6 @@ template<> struct std::hash<EngineCore::Vertex> {
 
 
 TODO:
-
-Make functions const so they are reusable.
-____________________________________________________________________________________
-Unify
-void CreateVertexBuffer();
-void CreateIndexBuffer();
-to one function.
-
 ____________________________________________________________________________________
 
 It should be noted that in a real world application, you're not supposed to actually call vkAllocateMemory for every individual buffer.

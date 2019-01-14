@@ -13,7 +13,6 @@ set(CORE
 set(SHADER
     shaders/shader.frag
     shaders/shader.vert
-    shaders/compile.bat    
 )
 
 set(ADDITIONAL_INCLUDES
