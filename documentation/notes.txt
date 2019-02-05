@@ -1,0 +1,1 @@
+application_overview.jpg: I used this outline to get an idea of what could be capsuled into a class and also to see what interfaces make sense.

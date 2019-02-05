@@ -18,8 +18,7 @@
 
 namespace EngineCore {
 
-	const int WIDTH = 800;
-	const int HEIGHT = 600;
+	class Application;
 
 	const std::string MODEL_PATH = "/assets/models/chalet.obj";
 	const std::string TEXTURE_PATH = "/assets/textures/chalet.jpg";
@@ -34,11 +33,6 @@ namespace EngineCore {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-#ifdef NDEBUG
-	const bool enableValidationLayers = false;
-#else
-	const bool enableValidationLayers = true;
-#endif
 
 	inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback)
 	{
@@ -129,15 +123,15 @@ namespace EngineCore {
 	{
 
 	public:
+		RenderCore(Application *app);
 
-		void Run();
+		void InitRenderer();
+		void RenderTick();
+		void CleanUp();
 
 	private:
-		GLFWwindow* pWindow;
+		Application* application;
 
-		VkInstance instance;
-		VkDebugUtilsMessengerEXT callback;
-		VkSurfaceKHR surface;
 
 		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 		VkDevice device;
@@ -193,19 +187,11 @@ namespace EngineCore {
 		VkSampler textureSampler;
 		VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-
-		void InitWindow();
-		void InitVulkan();
-		void MainLoop();
 		void CleanUpSwapChain();
-		void CleanUp();
 
 		static void OnWindowResized(GLFWwindow* window, int width, int height);
 
 		void RecreateSwapChain();
-		void CreateInstance();
-		void SetupDebugCallback();
-		void CreateSurface();
 		void PickPhysicalDevice(VkPhysicalDevice & physicalDevice, VkSampleCountFlagBits & msaaSamples) const;
 		void CreateLogicalDevice();
 		void CreateSwapChain();
@@ -228,7 +214,6 @@ namespace EngineCore {
 
 		void UpdateUniformBuffer(uint32_t currentImage);
 		void LoadModel();
-		void DrawFrame();
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
@@ -239,10 +224,7 @@ namespace EngineCore {
 		bool IsDeviceSuitable(const VkPhysicalDevice & device) const;
 		bool CheckDeviceExtensionSupport(const VkPhysicalDevice & device) const;
 		QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice & device) const;
-		std::vector<const char*> GetRequiredExtensions();
-		bool CheckValidationLayerSupport();
 		static std::vector<char> ReadFile(const std::string& filename);
-		static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 		void AllocateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 		void CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels,
@@ -303,34 +285,3 @@ template<> struct std::hash<EngineCore::Vertex> {
 			(std::hash<glm::vec2>()(vertex.texCoord) << 1);
 	}
 };
-
-
-/*
-
-
-TODO:
-____________________________________________________________________________________
-
-It should be noted that in a real world application, you're not supposed to actually call vkAllocateMemory for every individual buffer.
-The maximum number of simultaneous memory allocations is limited by the maxMemoryAllocationCount physical device limit,
-which may be as low as 4096 even on high end hardware like an NVIDIA GTX 1080.
-The right way to allocate memory for a large number of objects at the same time is to create a custom allocator that splits up a single allocation among many different objects
-by using the offset parameters that we've seen in many functions.
-
-You can either implement such an allocator yourself, or use the VulkanMemoryAllocator library provided by the GPUOpen initiative.
-However, for this tutorial it's okay to use a separate allocation for every resource,
-because we won't come close to hitting any of these limits for now.
-______________________________________________________________________________________________________________________________
-
-The previous chapter already mentioned that you should allocate multiple resources like buffers from a single memory allocation,
-but in fact you should go a step further. Driver developers recommend that you also store multiple buffers, like the vertex and index buffer,
-into a single VkBuffer and use offsets in commands like vkCmdBindVertexBuffers.
-The advantage is that your data is more cache friendly in that case, because it's closer together.
-It is even possible to reuse the same chunk of memory for multiple resources if they are not used during the same render operations,
-provided that their data is refreshed, of course.
-This is known as aliasing and some Vulkan functions have explicit flags to specify that you want to do this.
-______________________________________________________________________________________________________________________________
-
-Replace the Image Loader by an own image loader
-
-*/
