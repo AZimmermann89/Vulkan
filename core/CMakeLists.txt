@@ -10,7 +10,10 @@ set(CORE
     code/RenderCore.cpp
     code/Application.h
     code/Application.cpp
+    code/DeviceHandler.h
+    code/DeviceHandler.cpp
     code/Assert.h
+    code/Settings.h
 )
 
 set(SHADER

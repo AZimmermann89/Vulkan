@@ -1,6 +1,8 @@
 // Alexander Zimmermann, 2017
 #include "RenderCore.h"
-#include <code/Application.h>
+#include <code/Assert.h>
+#include <code/DeviceHandler.h>
+#include <code/Settings.h>
 
 #include <algorithm>
 #include <chrono>
@@ -18,15 +20,17 @@
 
 using namespace EngineCore;
 
-
-EngineCore::RenderCore::RenderCore(Application *app)
-	:application(app)
+EngineCore::RenderCore::RenderCore(GLFWwindow* window, VkInstance* instance, VkSurfaceKHR* surface)
+	: pWindow(window)
+	, pInstance(instance)
+	, pSurface(surface)
 {
 }
 
 void RenderCore::InitRenderer() {
-	PickPhysicalDevice(physicalDevice, msaaSamples);
-	CreateLogicalDevice();
+	pDeviceHandler = new DeviceHandler(pInstance, pSurface);
+
+
 	CreateSwapChain();
 	CreateImageViews();
 	CreateRenderPass();
@@ -106,7 +110,7 @@ void RenderCore::CleanUp() {
 
 	vkDestroyCommandPool(device, commandPool, nullptr);
 
-	vkDestroyDevice(device, nullptr);
+	delete pDeviceHandler;
 }
 
 void RenderCore::OnWindowResized(GLFWwindow * window, int width, int height)
@@ -117,12 +121,18 @@ void RenderCore::OnWindowResized(GLFWwindow * window, int width, int height)
 	app->bFramebufferResized = true;
 }
 
+void RenderCore::QueryFramebufferSize(int & width, int & height)
+{
+	glfwGetFramebufferSize(pWindow, &width, &height);
+	glfwWaitEvents();
+}
+
 void RenderCore::RecreateSwapChain()
 {
 	int width = 0, height = 0;
 
 	while (width == 0 || height == 0) {
-		application->QueryFramebufferSize(width, height);
+		QueryFramebufferSize(width, height);
 	}
 
 	vkDeviceWaitIdle(device);
@@ -137,31 +147,6 @@ void RenderCore::RecreateSwapChain()
 	CreateDepthResources();
 	CreateFramebuffers();
 	CreateCommandBuffers();
-}
-
-void RenderCore::PickPhysicalDevice(VkPhysicalDevice & physicalDevice, VkSampleCountFlagBits & msaaSamples) const {
-	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(application->GetInstance(), &deviceCount, nullptr);
-
-	if (deviceCount == 0) {
-		throw std::runtime_error("failed to find GPUs with Vulkan support!");
-	}
-
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(application->GetInstance(), &deviceCount, devices.data());
-
-	for (const auto& device : devices) {
-		if (IsDeviceSuitable(device)) {
-			physicalDevice = device;
-			msaaSamples = GetMaxUsableSampleCount(physicalDevice);
-			break;
-		}
-	}
-
-	if (physicalDevice == VK_NULL_HANDLE)
-	{
-		throw std::runtime_error("failed to find a suitable GPU!");
-	}
 }
 
 void RenderCore::CreateLogicalDevice()
@@ -227,7 +212,7 @@ void RenderCore::CreateSwapChain()
 
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = application->GetSurface();
+	createInfo.surface = *pSurface;
 
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
@@ -1317,7 +1302,7 @@ VkExtent2D RenderCore::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabil
 	else
 	{
 		int width, height;
-		application->GetWindowSize(width, height);
+		glfwGetWindowSize(pWindow, &width, &height);
 
 		VkExtent2D actualExtent =
 		{
@@ -1330,106 +1315,6 @@ VkExtent2D RenderCore::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabil
 
 		return actualExtent;
 	}
-}
-
-SwapChainSupportDetails RenderCore::QuerySwapChainSupport(const VkPhysicalDevice & device) const
-{
-	SwapChainSupportDetails details;
-
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, application->GetSurface(), &details.capabilities);
-
-	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, application->GetSurface(), &formatCount, nullptr);
-
-	if (formatCount != 0)
-	{
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, application->GetSurface(), &formatCount, details.formats.data());
-	}
-
-	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, application->GetSurface(), &presentModeCount, nullptr);
-
-	if (presentModeCount != 0)
-	{
-		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, application->GetSurface(), &presentModeCount, details.presentModes.data());
-	}
-
-	return details;
-}
-
-bool RenderCore::IsDeviceSuitable(const VkPhysicalDevice &  device) const
-{
-	QueueFamilyIndices indices = FindQueueFamilies(device);
-
-	bool extensionsSupported = CheckDeviceExtensionSupport(device);
-
-	bool swapChainAdequate = false;
-	if (extensionsSupported) {
-		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
-		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-	}
-
-	VkPhysicalDeviceFeatures supportedFeatures;
-	vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
-	return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
-}
-
-bool RenderCore::CheckDeviceExtensionSupport(const VkPhysicalDevice & device) const
-{
-	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-	std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-	for (const auto& extension : availableExtensions)
-	{
-		requiredExtensions.erase(extension.extensionName);
-	}
-
-	return requiredExtensions.empty();
-}
-
-QueueFamilyIndices RenderCore::FindQueueFamilies(const VkPhysicalDevice & device) const
-{
-	QueueFamilyIndices indices;
-
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	int i = 0;
-	for (const auto& queueFamily : queueFamilies)
-	{
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-		{
-			indices.graphicsFamily = i;
-		}
-
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, application->GetSurface(), &presentSupport);
-
-		if (queueFamily.queueCount > 0 && presentSupport)
-		{
-			indices.presentFamily = i;
-		}
-
-		if (indices.IsComplete())
-		{
-			break;
-		}
-
-		i++;
-	}
-
-	return indices;
 }
 
 std::vector<char> RenderCore::ReadFile(const std::string & filename)

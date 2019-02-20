@@ -6,7 +6,7 @@ int main() {
 	EngineCore::Application app{};
 
     try {
-		app.Run("ARenderer_v1", 800, 600);
+		app.Run("ARenderer", 800, 600);
     }
     catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
@@ -20,6 +20,8 @@ int main() {
 
 
 TODO:
+
+Tripple buffering
 ____________________________________________________________________________________
 
 It should be noted that in a real world application, you're not supposed to actually call vkAllocateMemory for every individual buffer.

@@ -8,7 +8,7 @@ using namespace EngineCore;
 
 Application::Application()
 {
-	pRenderer = new RenderCore(this);
+	pRenderer = new RenderCore(pWindow, &instance, &surface);
 }
 
 Application::~Application()
@@ -43,17 +43,6 @@ void Application::Run(const char * windowTitle, int width, int height)
 	glfwDestroyWindow(pWindow);
 
 	glfwTerminate();
-}
-
-void Application::QueryFramebufferSize(int & width, int & height)
-{
-	glfwGetFramebufferSize(pWindow, &width, &height);
-	glfwWaitEvents();
-}
-
-void EngineCore::Application::GetWindowSize(int & width, int & height)
-{
-	glfwGetWindowSize(pWindow, &width, &height);
 }
 
 VkInstance & EngineCore::Application::GetInstance()

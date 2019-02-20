@@ -18,7 +18,7 @@
 
 namespace EngineCore {
 
-	class Application;
+	class DeviceHandler;
 
 	const std::string MODEL_PATH = "/assets/models/chalet.obj";
 	const std::string TEXTURE_PATH = "/assets/textures/chalet.jpg";
@@ -52,21 +52,6 @@ namespace EngineCore {
 			func(instance, callback, pAllocator);
 		}
 	}
-
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-
-		bool IsComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
-
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
 
 	struct Vertex {
 		glm::vec3 pos;
@@ -123,21 +108,18 @@ namespace EngineCore {
 	{
 
 	public:
-		RenderCore(Application *app);
+		RenderCore(GLFWwindow* window, VkInstance* instance, VkSurfaceKHR* surface);
 
 		void InitRenderer();
 		void RenderTick();
 		void CleanUp();
 
 	private:
-		Application* application;
+		DeviceHandler* pDeviceHandler;
 
-
-		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-		VkDevice device;
-
-		VkQueue graphicsQueue;
-		VkQueue presentQueue;
+		GLFWwindow* pWindow;
+		VkInstance* pInstance;
+		VkSurfaceKHR* pSurface;
 
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;
@@ -216,14 +198,11 @@ namespace EngineCore {
 		void LoadModel();
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 
+		void QueryFramebufferSize(int & width, int & height);
 		VkShaderModule CreateShaderModule(const std::vector<char>& code);
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-		SwapChainSupportDetails QuerySwapChainSupport(const VkPhysicalDevice & device) const;
-		bool IsDeviceSuitable(const VkPhysicalDevice & device) const;
-		bool CheckDeviceExtensionSupport(const VkPhysicalDevice & device) const;
-		QueueFamilyIndices FindQueueFamilies(const VkPhysicalDevice & device) const;
 		static std::vector<char> ReadFile(const std::string& filename);
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 		void AllocateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
