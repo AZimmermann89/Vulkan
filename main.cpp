@@ -1,18 +1,15 @@
 // Alexander Zimmermann, 2017
-#include <code/Application.h>
-#include <iostream>
+
+
+#include <code/RenderCore.h>
+#include <stdio.h>
+
 
 int main() {
-	EngineCore::Application app{};
+	RenderCore rendCore{};
 
-    try {
-		app.Run("ARenderer", 800, 600);
-    }
-    catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
+	rendCore.Run();
+		
     return EXIT_SUCCESS;
 }
 

@@ -8,12 +8,8 @@ set(VULKAN_GLSL_COMPILER "${Vulkan_INCLUDE_DIRS}/../Bin/glslangValidator.exe")
 set(CORE 
     code/RenderCore.h
     code/RenderCore.cpp
-    code/Application.h
-    code/Application.cpp
-    code/DeviceHandler.h
-    code/DeviceHandler.cpp
     code/Assert.h
-    code/Settings.h
+    code/Assert.cpp
 )
 
 set(SHADER

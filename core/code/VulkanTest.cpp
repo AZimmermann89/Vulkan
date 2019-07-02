@@ -1,3 +1,4 @@
+// A hello world application to test if glfw, glm and vulkan is set up correctly.
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 

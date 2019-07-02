@@ -1,5 +1,6 @@
-if not exist "_cmake" mkdir _cmake
+if exist "_cmake" rmdir /s /q _cmake
+mkdir _cmake
 cd _cmake
-cmake .. -G "Visual Studio 15 2017 Win64"
+cmake .. -G "Visual Studio 16 2019"
 cd ..
 pause

@@ -30,6 +30,14 @@ namespace EngineCore {
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	struct DeviceInfoBundle
+	{
+		VkDevice* pDevice = nullptr;
+		VkPhysicalDevice* pPhysicalDevice = nullptr;
+
+		
+	};
+
 	class DeviceHandler {
 
 		VkInstance* pInstance;

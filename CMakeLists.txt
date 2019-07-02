@@ -8,6 +8,6 @@ target_link_libraries(vulktest vulk_core)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT vulktest )
 
 set_target_properties(vulktest PROPERTIES CXX_STANDARD 17
-                                            CXX_STANDARD_REQUIRED ON
-                                            CXX_EXTENSIONS OFF
+                                            #CXX_STANDARD_REQUIRED ON
+                                            #CXX_EXTENSIONS OFF
                                             )
