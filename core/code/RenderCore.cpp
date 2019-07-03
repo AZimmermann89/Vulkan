@@ -890,10 +890,13 @@ void RenderCore::AllocateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkM
 	VkMemoryRequirements memRequirements;
 	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 
+	uint32_t memoryTypeIndex = 0;
+	GM_ASSERT_MSG(FindMemoryType(memRequirements.memoryTypeBits, properties, memoryTypeIndex), "Failed to find the memory of wished type on the GPU.");
+
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = memoryTypeIndex;
 
 	GM_ASSERT_VK_MSG(vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory), "Failed to allocate buffer memory!");
 
@@ -928,11 +931,14 @@ void RenderCore::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels
 	
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(device, image, &memRequirements);
+	
+	uint32_t memoryTypeIndex = 0;
+	GM_ASSERT_MSG(FindMemoryType(memRequirements.memoryTypeBits, properties, memoryTypeIndex), "Failed to find the memory of wished type on the GPU.");
 
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+	allocInfo.memoryTypeIndex = memoryTypeIndex;
 
 	GM_ASSERT_VK_MSG(vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory), "Failed to allocate image memory!");
 
@@ -1566,21 +1572,21 @@ VKAPI_ATTR VkBool32 VKAPI_CALL RenderCore::DebugCallback(VkDebugUtilsMessageSeve
 	return VK_FALSE;
 }
 
-uint32_t RenderCore::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
+bool RenderCore::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, uint32_t& memoryIndex) const
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	for (memoryIndex = 0; memoryIndex < memProperties.memoryTypeCount; memoryIndex++)
 	{
-		if ((typeFilter & (1 << i))
-			&& (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		if ((typeFilter & (1 << memoryIndex))
+			&& (memProperties.memoryTypes[memoryIndex].propertyFlags & properties) == properties)
 		{
-			return i;
-		}
+			return true;
+		}			
 	}
-
-	GM_ASSERT_MSG(false, "Failed to find suitable memory type!");
+	
+	return false;
 }
 
 VkFormat RenderCore::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
@@ -1600,17 +1606,20 @@ VkFormat RenderCore::FindSupportedFormat(const std::vector<VkFormat>& candidates
 		}
 	}
 
-	GM_ASSERT_MSG(false, "Failed to fond supported format!");
 	return VK_FORMAT_UNDEFINED;
 }
 
 VkFormat RenderCore::FindDepthFormat()
 {
-	return FindSupportedFormat(
+	VkFormat supportedFormat = FindSupportedFormat(
 		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
 	);
+
+	GM_ASSERT_MSG(supportedFormat == VK_FORMAT_UNDEFINED, "Failed to find supported format!");
+
+	return supportedFormat;
 }
 
 inline bool RenderCore::HasStencilComponent(VkFormat format)
